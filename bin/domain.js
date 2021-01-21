@@ -120,7 +120,7 @@ const deps = async () => {
     `cd ${target}`,
     `rm -rf ${target}/.git`,
     `sed -i.bak "s/DEPS_NAME/${data.name}/g" *`,
-    `rm *.bak package.json`
+    `rm *.bak`
   ].join(" && ");
 
   showMessage("------ The following command will be executed ------");
