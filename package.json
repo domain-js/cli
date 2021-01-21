@@ -1,0 +1,23 @@
+{
+  "name": "domain-clic",
+  "version": "0.1.0",
+  "description": "Domain.js/cli command line tools",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/domain-js/cli.git"
+  },
+  "keywords": [
+    "Domain.js",
+    "DDD"
+  ],
+  "author": "Redstone Zhao",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/domain-js/cli/issues"
+  },
+  "homepage": "https://github.com/domain-js/cli#readme"
+}
