@@ -80,8 +80,8 @@ const pubDeps = async () => {
   const commands = [
     `git clone 'https://github.com/domain-js/pub-deps-boilerplate.git' ${data.dir}`,
     `cd ${data.dir}`,
-    `rm -rf ${data.dir}/.git`,
-    `sed -i.bak "s/DEPS_NAME/${data.name}/g" package.json`,
+    `rm -rf .git`,
+    `sed -i.bak "s/DEPS_NAME/${data.name}/g" *`,
     `rm *.bak`
   ].join(" && ");
 
@@ -118,7 +118,7 @@ const deps = async () => {
   const commands = [
     `git clone 'https://github.com/domain-js/deps-boilerplate.git' ${target}`,
     `cd ${target}`,
-    `rm -rf ${target}/.git`,
+    `rm -rf .git`,
     `sed -i.bak "s/DEPS_NAME/${data.name}/g" *`,
     `rm *.bak`
   ].join(" && ");
