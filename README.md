@@ -12,5 +12,8 @@ domain.js 项目全局工具，用来辅助创建项目以及项目下的一些�
 ## init
 初始化一个domain项目
 
-## plugin
-初始化一个domain项目的插件模块
+## pubDeps
+初始化一个domain项目的公共模块
+
+## deps
+初始化一个domain项目的项目私有模块
