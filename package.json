@@ -1,10 +1,13 @@
 {
-  "name": "domain-clic",
+  "name": "domain-cli",
   "version": "0.1.0",
   "description": "Domain.js/cli command line tools",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "domain-cli": "bin/domain"
   },
   "repository": {
     "type": "git",
@@ -19,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/domain-js/cli/issues"
   },
-  "homepage": "https://github.com/domain-js/cli#readme"
+  "homepage": "https://github.com/domain-js/cli#readme",
+  "dependencies": {
+    "async": "^3.2.0"
+  }
 }
