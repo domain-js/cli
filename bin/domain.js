@@ -10,15 +10,15 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
   terminal: true,
-  prompt: "DOMAIN> ",
+  prompt: "> ",
   removeHistoryDuplicates: true
 });
-rl.setPrompt("DOMAIN> ");
+rl.setPrompt("> ");
 
 const confirm = async question =>
   new Promise(resolve => {
     rl.question(`${question} [Yes/no]: `, ans => resolve(ans.toLowerCase() !== "no"));
-    rl.setPrompt("DOMAIN> ");
+    rl.setPrompt("> ");
   });
 
 const getAnswers = async questions => {
@@ -40,7 +40,7 @@ const getAnswers = async questions => {
 const showMessage = (msg, exit) => {
   rl.output.write(`${msg}\n`);
   if (exit != null) process.exit(exit);
-  rl.setPrompt("DOMAIN> ");
+  rl.setPrompt("> ");
 };
 
 const init = async () => {
@@ -55,6 +55,9 @@ const init = async () => {
     `cd ${data.dir}`,
     `rm -rf ${data.dir}./.git`
   ].join(" && ");
+
+  showMessage("------ The following command will be executed ------");
+  showMessage(commands);
 
   return new Promise((resolve, reject) => {
     exec(commands, (err, stdout, stderr) => {
@@ -72,14 +75,18 @@ const pubDeps = async () => {
   const data = await getAnswers(questions);
   const ok = await confirm(`确定创建在 ${data.dir || "当前"} 目录吗?`);
   if (!ok) return init();
+  if (data.dir.slice(-1) === "/") data.dir = data.dir.slice(0, -1);
 
   const commands = [
-    `git clone 'https://github.com/domain-js/deps-boilerplate.git' ${data.dir}`,
+    `git clone 'https://github.com/domain-js/pub-deps-boilerplate.git' ${data.dir}`,
     `cd ${data.dir}`,
-    `rm -rf ${data.dir}./.git`,
-    `sed -i.bak "s/DEPS_NAME_/${data.name}/g" package.json README.md`,
+    `rm -rf ${data.dir}/.git`,
+    `sed -i.bak "s/DEPS_NAME/${data.name}/g" package.json`,
     `rm *.bak`
   ].join(" && ");
+
+  showMessage("------ The following command will be executed ------");
+  showMessage(commands);
 
   return new Promise((resolve, reject) => {
     exec(commands, (err, stdout, stderr) => {
@@ -97,8 +104,9 @@ const deps = async () => {
   const data = await getAnswers(questions);
   const ok = await confirm(`确定创建在 ${data.dir || "./"}src/deps/${data.name} 目录吗?`);
   if (!ok) return init();
+  if (data.dir.slice(-1) === "/") data.dir = data.dir.slice(0, -1);
 
-  const target = `${data.dir || "./"}src/deps/${data.name}`;
+  const target = `${data.dir || "."}/src/deps/${data.name}`;
   if (fs.existsSync(target))
     return showMessage(`目录(${target})已经被占用，为避免冲突，只能创建在不存在的目录中`);
 
@@ -109,11 +117,14 @@ const deps = async () => {
 
   const commands = [
     `git clone 'https://github.com/domain-js/deps-boilerplate.git' ${target}`,
-    `cd ${data.dir}`,
-    `rm -rf ${data.dir}./.git`,
-    `sed -i.bak "s/DEPS_NAME_/${data.name}/g" *`,
-    `rm *.bak package.json package-lock.json`
+    `cd ${target}`,
+    `rm -rf ${target}/.git`,
+    `sed -i.bak "s/DEPS_NAME/${data.name}/g" *`,
+    `rm *.bak package.json`
   ].join(" && ");
+
+  showMessage("------ The following command will be executed ------");
+  showMessage(commands);
 
   return new Promise((resolve, reject) => {
     exec(commands, (err, stdout, stderr) => {
