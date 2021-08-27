@@ -251,7 +251,87 @@ const loadServices = async (rootDir = process.cwd(), ext = "js") => {
   await makeDefineFile(modules.sort(), targetFile, isTS);
 };
 
-const actions = { init, pubDeps, deps, loadDeps, loadServices };
+const file2Module = (file) => file.replace(/(-\w)/g, (m) => m[1].toUpperCase());
+
+const deepLoadDir = (root, parent, files = []) => {
+  const paths = {};
+  const dir = path.resolve(root, parent);
+  for (const x of fs.readdirSync(dir)) {
+    // 忽略隐藏目录
+    if (x[0] === ".") continue;
+    const file = path.resolve(dir, x);
+    const stat = fs.statSync(file);
+
+    const { name, ext } = path.parse(x);
+    const relativeFilePath = `./${path.join(parent, name)}`;
+    const moduleName = file2Module(name);
+    // 如果是文件则记录
+    if (stat.isFile()) {
+      if (ext === ".ts") {
+        const JSFile = path.resolve(dir, `${name}.js`);
+        // 对应的js文件存在，则ts文件忽略
+        if (fs.existsSync(JSFile)) continue;
+        // 对应的js文件不存在，抛出异常提示用户要先编译
+        throw Error(`请先编译ts文件: ${file}`);
+      }
+      files.push(relativeFilePath);
+      paths[moduleName] = relativeFilePath;
+      continue;
+    }
+
+    if (stat.isDirectory()) {
+      paths[moduleName] = deepLoadDir(root, relativeFilePath, files);
+    }
+  }
+
+  return paths;
+};
+
+const deepLoadModule = async (rootDir, targetFile) => {
+  const files = [];
+  const paths = deepLoadDir(rootDir, "./", files);
+  const { ext } = path.parse(targetFile);
+
+  // 按字典排序，后续有变动的时候不容易冲突
+  files.sort();
+
+  const relative = path.relative(path.dirname(targetFile), rootDir);
+  const isTS = ext === ".ts";
+  const content = ["// domain-cli 自动生成"];
+  for (let i = 0; i < files.length; i += 1) {
+    const name = files[i];
+    const _path = `./${path.join(relative, name)}`;
+    if (isTS) {
+      content.push(`import * as module${i} from "${_path}"`);
+    } else {
+      content.push(`const module${i} = require("${_path}")`);
+    }
+  }
+
+  // 处理导出
+  content.push("\n");
+  let _exports = JSON.stringify(paths, null, 2);
+  for (let i = 0; i < files.length; i += 1) {
+    _exports = _exports.replace(`"${files[i]}"`, `module${i}`);
+  }
+  if (isTS) {
+    content.push(`export = ${_exports}`);
+  } else {
+    content.push(`module.exports = ${_exports}`);
+  }
+
+  fs.writeFileSync(targetFile, content.join("\n"));
+  await new Promise((resolve, reject) => {
+    exec(`prettier -w ${targetFile}`, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
+  console.log(`Completed: ${targetFile}`);
+};
+
+const actions = { init, pubDeps, deps, loadDeps, loadServices, deepLoadModule };
 
 const main = async (command = "init") => {
   const action = actions[command];
