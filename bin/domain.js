@@ -85,9 +85,9 @@ const pubDeps = async () => {
   const commands = [
     `git clone 'https://github.com/domain-js/pub-deps-boilerplate.git' ${data.dir}`,
     `cd ${data.dir}`,
-    `rm -rf .git`,
+    "rm -rf .git",
     `sed -i.bak "s/DEPS_NAME/${data.name}/g" *`,
-    `rm *.bak`,
+    "rm *.bak",
   ].join(" && ");
 
   showMessage("------ The following command will be executed ------");
@@ -126,9 +126,9 @@ const deps = async () => {
   const commands = [
     `git clone 'https://github.com/domain-js/deps-boilerplate.git' ${target}`,
     `cd ${target}`,
-    `rm -rf .git`,
+    "rm -rf .git",
     `sed -i.bak "s/DEPS_NAME/${data.name}/g" *`,
-    `rm *.bak`,
+    "rm *.bak",
   ].join(" && ");
 
   showMessage("------ The following command will be executed ------");
@@ -144,17 +144,15 @@ const deps = async () => {
   });
 };
 
-const makeDefineFile = async (modules, rootDir, isTS) => {
-  const ext = isTS ? "ts" : "js";
-  const targetFile = path.resolve(rootDir, `src/deps-defines.${ext}`);
-  const content = ["// domain-cli loadDeps 自动生成"];
+const makeDefineFile = async (modules, targetFile, isTS) => {
+  const content = ["// domain-cli 自动生成"];
   const _exports = [];
   for (let i = 0; i < modules.length; i += 1) {
     const name = modules[i];
     if (isTS) {
-      content.push(`import * as module${i} from "./deps/${name}"`);
+      content.push(`import * as module${i} from "./${name}"`);
     } else {
-      content.push(`const module${i} = require("./deps/${name}")`);
+      content.push(`const module${i} = require("./${name}")`);
     }
     _exports.push(`"${name}": module${i},`);
   }
@@ -172,7 +170,7 @@ const makeDefineFile = async (modules, rootDir, isTS) => {
 
   fs.writeFileSync(targetFile, content.join("\n"));
   await new Promise((resolve, reject) => {
-    exec(`prettier -w ${targetFile}`, (err, stdout, stderr) => {
+    exec(`prettier -w ${targetFile}`, (err) => {
       if (err) reject(err);
       else resolve();
     });
@@ -187,7 +185,7 @@ const checkHookExport = (_dir) => {
     const JSFile = path.resolve(_dir, `${hook}.js`);
 
     if (fs.existsSync(TSFile) && !fs.existsSync(JSFile)) {
-      throw Error(`请先编辑ts文件: ${_dir}`);
+      throw Error(`请先编译ts文件: ${_dir}`);
     }
     const Main = _require(_dir);
     if (fs.existsSync(JSFile)) {
@@ -215,10 +213,45 @@ const loadDeps = async (rootDir = process.cwd(), ext = "js") => {
   }
 
   // 按字典排序，后续有变动的时候不容易冲突
-  await makeDefineFile(modules.sort(), rootDir, isTS);
+  const targetFile = path.resolve(rootDir, `src/deps/defines.${ext}`);
+  await makeDefineFile(modules.sort(), targetFile, isTS);
 };
 
-const actions = { init, pubDeps, deps, loadDeps };
+const checkService = (_dir) => {
+  const TSFile = path.resolve(_dir, "index.ts");
+  const JSFile = path.resolve(_dir, "index.js");
+
+  if (fs.existsSync(TSFile) && !fs.existsSync(JSFile)) {
+    throw Error(`请先编译ts文件: ${_dir}`);
+  }
+  if (!fs.existsSync(JSFile)) {
+    throw Error(`创建的目录没有 index.js 文件${_dir}`);
+  }
+};
+
+const loadServices = async (rootDir = process.cwd(), ext = "js") => {
+  const isTS = ext === "ts";
+  const modules = [];
+  const dir = path.resolve(rootDir, "src/services/");
+  for (const x of fs.readdirSync(dir)) {
+    // 忽略隐藏目录, 忽略私有目录
+    if (x[0] === "." || x[0] === "_") continue;
+    const _dir = path.resolve(dir, x);
+    const stat = fs.statSync(_dir);
+
+    // 非目录忽略，模块必须是目录
+    if (!stat.isDirectory()) continue;
+    checkService(_dir, isTS);
+
+    modules.push(x);
+  }
+
+  // 按字典排序，后续有变动的时候不容易冲突
+  const targetFile = path.resolve(rootDir, `src/services/defines.${ext}`);
+  await makeDefineFile(modules.sort(), targetFile, isTS);
+};
+
+const actions = { init, pubDeps, deps, loadDeps, loadServices };
 
 const main = async (command = "init") => {
   const action = actions[command];
