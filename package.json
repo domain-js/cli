@@ -1,6 +1,6 @@
 {
   "name": "@domain.js/cli",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Domain.js/cli command line tools",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,12 @@
     "type": "git",
     "url": "git+ssh://git@github.com/domain-js/cli.git"
   },
-  "keywords": ["Domain.js", "cli", "boilerplate", "scaffolding"],
+  "keywords": [
+    "Domain.js",
+    "cli",
+    "boilerplate",
+    "scaffolding"
+  ],
   "author": "Redstone Zhao",
   "license": "MIT",
   "bugs": {
