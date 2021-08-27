@@ -154,7 +154,7 @@ const makeDefineFile = async (modules, targetFile, isTS) => {
     } else {
       content.push(`const module${i} = require("./${name}")`);
     }
-    _exports.push(`"${name}": module${i},`);
+    _exports.push(`"${file2Module(name)}": module${i},`);
   }
 
   // 处理导出
