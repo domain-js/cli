@@ -144,17 +144,29 @@ const deps = async () => {
   });
 };
 
+const file2Module = (file) => file.replace(/(-\w)/g, (m) => m[1].toUpperCase());
+const filePath2Var = (_path) => file2Module(_path.replace(/[/.]+/g, "-"));
+const codeStyleFormat = (targetFile) =>
+  new Promise((resolve, reject) => {
+    exec(`prettier -w ${targetFile} && eslint --fix ${targetFile}`, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
 const makeDefineFile = async (modules, targetFile, isTS) => {
   const content = ["// domain-cli 自动生成"];
   const _exports = [];
   for (let i = 0; i < modules.length; i += 1) {
     const name = modules[i];
+    const variable = filePath2Var(name);
+
     if (isTS) {
-      content.push(`import * as module${i} from "./${name}"`);
+      content.push(`import * as ${variable} from "./${name}"`);
     } else {
-      content.push(`const module${i} = require("./${name}")`);
+      content.push(`const ${variable} = require("./${name}")`);
     }
-    _exports.push(`"${file2Module(name)}": module${i},`);
+    _exports.push(`"${file2Module(name)}": ${variable},`);
   }
 
   // 处理导出
@@ -169,12 +181,7 @@ const makeDefineFile = async (modules, targetFile, isTS) => {
   content.push("};");
 
   fs.writeFileSync(targetFile, content.join("\n"));
-  await new Promise((resolve, reject) => {
-    exec(`prettier -w ${targetFile}`, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  await codeStyleFormat(targetFile);
 
   console.log(`Completed: ${targetFile}`);
 };
@@ -251,8 +258,6 @@ const loadServices = async (rootDir = process.cwd(), ext = "js") => {
   await makeDefineFile(modules.sort(), targetFile, isTS);
 };
 
-const file2Module = (file) => file.replace(/(-\w)/g, (m) => m[1].toUpperCase());
-
 const deepLoadDir = (root, parent, files = []) => {
   const paths = {};
   const dir = path.resolve(root, parent);
@@ -301,10 +306,11 @@ const deepLoadModule = async (rootDir, targetFile) => {
   for (let i = 0; i < files.length; i += 1) {
     const name = files[i];
     const _path = `./${path.join(relative, name)}`;
+    const variable = filePath2Var(name);
     if (isTS) {
-      content.push(`import * as module${i} from "${_path}"`);
+      content.push(`import * as ${variable} from "${_path}"`);
     } else {
-      content.push(`const module${i} = require("${_path}")`);
+      content.push(`const ${variable} = require("${_path}")`);
     }
   }
 
@@ -312,7 +318,7 @@ const deepLoadModule = async (rootDir, targetFile) => {
   content.push("\n");
   let _exports = JSON.stringify(paths, null, 2);
   for (let i = 0; i < files.length; i += 1) {
-    _exports = _exports.replace(`"${files[i]}"`, `module${i}`);
+    _exports = _exports.replace(`"${files[i]}"`, filePath2Var(files[i]));
   }
   if (isTS) {
     content.push(`export = ${_exports}`);
@@ -321,12 +327,7 @@ const deepLoadModule = async (rootDir, targetFile) => {
   }
 
   fs.writeFileSync(targetFile, content.join("\n"));
-  await new Promise((resolve, reject) => {
-    exec(`prettier -w ${targetFile}`, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  await codeStyleFormat(targetFile);
 
   console.log(`Completed: ${targetFile}`);
 };
